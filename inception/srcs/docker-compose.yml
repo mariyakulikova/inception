@@ -26,6 +26,8 @@ services:
   nginx:
     build: ./requirements/nginx
     container_name: nginx
+    env_file:
+      - .env
     depends_on:
       - wordpress
     ports:
