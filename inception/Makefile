@@ -19,7 +19,9 @@ define del_host
 	sudo sed -i "\|^127\.0\.0\.1[[:space:]]\+$(1)$$|d" $(HOSTS)
 endef
 
-.PHONY: up down clean prune re
+.PHONY: all up down clean fclean prune re
+
+all: up
 
 up:
 	sudo mkdir -p $(MDB_DIR) $(WP_DIR)
@@ -30,12 +32,13 @@ down:
 	$(call del_host,$(DOMAIN))
 	$(COMPOSE) down
 
-clean:
-	$(call del_host,$(DOMAIN))
+clean: down
+
+fclean: down
 	$(COMPOSE) down --rmi all -v
 	sudo rm -rf $(MDB_DIR) $(WP_DIR)
 
 prune: clean
 	docker system prune -a --volumes -f
 
-re: clean up
+re: fclean up
