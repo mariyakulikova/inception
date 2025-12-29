@@ -10,7 +10,7 @@ COPY tools/gen_cert.sh /usr/local/bin/gen_cert.sh
 RUN chmod +x /etc/nginx/nginx.conf
 RUN chmod +x /usr/local/bin/gen_cert.sh
 
-EXPOSE 80 443
+EXPOSE 443
 
 ENTRYPOINT ["/usr/local/bin/gen_cert.sh"]
 
