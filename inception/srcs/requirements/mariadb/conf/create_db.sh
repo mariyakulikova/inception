@@ -13,8 +13,8 @@ read_secret() {
   tr -d '\r\n' < "$path"
 }
 
-DB_ROOT_PASS="$(read_secret /run/secrets/db_root_pass.txt)"
-DB_USER_PASS="$(read_secret /run/secrets/db_user_pass.txt)"
+DB_ROOT_PASS="$(read_secret /run/secrets/db_root_pass)"
+DB_USER_PASS="$(read_secret /run/secrets/db_user_pass)"
 
 if [ -z "$DB_ROOT_PASS" ] || [ -z "$DB_USER_PASS" ]; then
   echo "ERROR: one of the secrets is empty (db_root_pass.txt / db_user_pass.txt)" >&2
