@@ -9,6 +9,9 @@ services:
     networks:
       - inception
     restart: unless-stopped
+    secrets:
+      - db_root_pass
+      - db_user_pass
 
   wordpress:
     build: ./requirements/wordpress
@@ -37,6 +40,12 @@ services:
     networks:
       - inception
     restart: unless-stopped
+
+secrets:
+  db_root_pass:
+    file: ../secrets/db_root_pass.txt
+  db_user_pass:
+    file: ../secrets/db_user_pass.txt
 
 volumes:
   mariadb_data:
