@@ -25,6 +25,10 @@ services:
     networks:
       - inception
     restart: unless-stopped
+    secrets:
+      - wp_admin_pass
+      - wp_user_pass
+      - db_user_pass
 
   nginx:
     build: ./requirements/nginx
@@ -46,6 +50,10 @@ secrets:
     file: ../secrets/db_root_pass.txt
   db_user_pass:
     file: ../secrets/db_user_pass.txt
+  wp_admin_pass:
+    file: ../secrets/wp_admin_pass.txt
+  wp_user_pass:
+    file: ../secrets/wp_user_pass.txt
 
 volumes:
   mariadb_data:
