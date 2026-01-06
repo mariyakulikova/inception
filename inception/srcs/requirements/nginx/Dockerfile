@@ -1,26 +1,17 @@
 FROM debian:12-slim
 
-RUN apt-get update && apt-get install -y \
-    php-fpm php-mysql \
-    curl ca-certificates \
-    mariadb-client \
-    unzip \
-  && curl -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
-       -o /usr/local/bin/wp \
-  && chmod +x /usr/local/bin/wp \
+RUN apt-get update && apt-get install -y nginx openssl \
   && rm -rf /var/lib/apt/lists/*
 
-COPY tools/www.conf /etc/php/8.2/fpm/pool.d/www.conf
+RUN rm -f /etc/nginx/sites-enabled/default
 
-RUN mkdir -p /run/php
+COPY conf/nginx.conf /etc/nginx/nginx.conf
+COPY tools/gen_cert.sh /usr/local/bin/gen_cert.sh
+RUN chmod +x /etc/nginx/nginx.conf
+RUN chmod +x /usr/local/bin/gen_cert.sh
 
-RUN mkdir -p /var/www/html
-WORKDIR /var/www/html
+EXPOSE 443
 
-COPY tools/wp-config-create.sh /usr/local/bin/wp-config-create.sh
-RUN chmod +x /usr/local/bin/wp-config-create.sh
+ENTRYPOINT ["/usr/local/bin/gen_cert.sh"]
 
-EXPOSE 9000
-
-ENTRYPOINT ["/usr/local/bin/wp-config-create.sh"]
-CMD ["php-fpm8.2", "-F"]
+CMD ["nginx", "-g", "daemon off;"]
