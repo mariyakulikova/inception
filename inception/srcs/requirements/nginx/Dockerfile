@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
   && chmod +x /usr/local/bin/wp \
   && rm -rf /var/lib/apt/lists/*
 
-COPY tools/www.conf /etc/php/8.2/fpm/pool.d/www.conf
+COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 
 RUN mkdir -p /run/php
 
