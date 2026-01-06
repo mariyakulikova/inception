@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y mariadb-server \
 RUN sed -i 's/^bind-address[[:space:]]*=.*/bind-address = 0.0.0.0/' \
 	/etc/mysql/mariadb.conf.d/50-server.cnf
 
-COPY conf/create_db.sh /usr/local/bin/create_db.sh
+COPY tool/create_db.sh /usr/local/bin/create_db.sh
 RUN chmod +x /usr/local/bin/create_db.sh
 
 EXPOSE 3306

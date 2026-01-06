@@ -16,7 +16,7 @@ RUN sed -i 's|^listen = .*|listen = 9000|' /etc/php/*/fpm/pool.d/www.conf \
 RUN mkdir -p /var/www/html
 WORKDIR /var/www/html
 
-COPY conf/wp-config-create.sh /usr/local/bin/wp-config-create.sh
+COPY tool/wp-config-create.sh /usr/local/bin/wp-config-create.sh
 RUN chmod +x /usr/local/bin/wp-config-create.sh
 
 EXPOSE 9000
