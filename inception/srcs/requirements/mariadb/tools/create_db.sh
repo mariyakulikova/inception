@@ -1,63 +1,80 @@
 #!/bin/bash
-set -e
-
-DATADIR="/var/lib/mysql"
-MARKER="$DATADIR/.inception_initialized"
+set -euo pipefail
 
 read_secret() {
-  local path="$1"
-  if [ ! -f "$path" ]; then
-    echo "ERROR: secret file not found: $path" >&2
-    exit 1
+  local var="$1"
+  local file="$2"
+  if [[ -f "$file" ]]; then
+    local val
+    val="$(tr -d '\r\n' < "$file")"
+    export "$var=$val"
   fi
-  tr -d '\r\n' < "$path"
 }
 
-DB_ROOT_PASS="$(read_secret /run/secrets/db_root_pass)"
-DB_USER_PASS="$(read_secret /run/secrets/db_user_pass)"
+: "${DB_NAME:?DB_NAME is not set}"
+: "${DB_USER:?DB_USER is not set}"
 
-if [ -z "$DB_ROOT_PASS" ] || [ -z "$DB_USER_PASS" ]; then
-  echo "ERROR: one of the secrets is empty (db_root_pass.txt / db_user_pass.txt)" >&2
-  exit 1
-fi
+DB_HOST="${DB_HOST:-localhost}"
 
-chown -R mysql:mysql "$DATADIR"
+read_secret DB_ROOT_PASS "/run/secrets/db_root_pass"
+read_secret DB_PASS      "/run/secrets/db_user_pass"
 
-if [ -f "$MARKER" ]; then
-  echo "MariaDB already initialized (marker found)."
-  exec "$@"
-fi
+: "${DB_ROOT_PASS:?DB_ROOT_PASS is not set (secret /run/secrets/db_root_pass)}"
+: "${DB_PASS:?DB_PASS is not set (secret /run/secrets/db_user_pass)}"
 
-echo "Starting temp MariaDB server..."
-mysqld_safe --datadir="$DATADIR" --skip-networking &
-pid="$!"
+DATADIR="/var/lib/mysql"
+SOCKET="/run/mysqld/mysqld.sock"
 
-until mysqladmin ping --silent; do
-  sleep 1
-done
+mkdir -p /run/mysqld
+chown -R mysql:mysql /run/mysqld
 
-echo "Creating DB/user if needed..."
-mysql -uroot <<-SQL
-  FLUSH PRIVILEGES;
+if [[ ! -d "${DATADIR}/mysql" ]]; then
+  echo "[mariadb] Initializing data directory..."
+  chown -R mysql:mysql "$DATADIR"
+  mariadb-install-db --user=mysql --datadir="$DATADIR" >/dev/null
 
-  ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASS}';
+  echo "[mariadb] Starting temporary server for init..."
+  mariadbd --user=mysql --datadir="$DATADIR" \
+    --skip-networking --socket="$SOCKET" &
+  pid="$!"
 
-  CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  for i in {1..60}; do
+    if mariadb-admin --socket="$SOCKET" ping >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
 
-  CREATE USER IF NOT EXISTS '${DB_USER}'@'%'
-    IDENTIFIED BY '${DB_USER_PASS}';
+  if ! mariadb-admin --socket="$SOCKET" ping >/dev/null 2>&1; then
+    echo "[mariadb] ERROR: temp server didn't start"
+    kill "$pid" 2>/dev/null || true
+    exit 1
+  fi
 
-  GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
-  FLUSH PRIVILEGES;
+  echo "[mariadb] Running init SQL..."
+  mariadb --protocol=socket --socket="$SOCKET" -u root <<SQL
+-- Set root password
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASS}';
+
+-- Basic hardening
+DELETE FROM mysql.user WHERE User='';
+DROP DATABASE IF EXISTS test;
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
+FLUSH PRIVILEGES;
+
+-- Create app database and user
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASS}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
+FLUSH PRIVILEGES;
 SQL
 
-touch "$MARKER"
-chown mysql:mysql "$MARKER"
+  echo "[mariadb] Shutting down temporary server..."
+  mariadb-admin --protocol=socket --socket="$SOCKET" -u root -p"${DB_ROOT_PASS}" shutdown
 
-echo "Stopping temp MariaDB server..."
-mysqladmin -uroot -p"${DB_ROOT_PASS}" shutdown
-wait "$pid"
+  wait "$pid" 2>/dev/null || true
+  echo "[mariadb] Init done."
+fi
 
-echo "MariaDB init done. Starting server..."
-exec "$@"
+echo "[mariadb] Starting MariaDB (foreground, PID 1)..."
+exec mariadbd --user=mysql --datadir="$DATADIR" --bind-address=0.0.0.0
