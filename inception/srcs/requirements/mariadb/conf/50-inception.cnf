@@ -1,0 +1,22 @@
+# /etc/mysql/mariadb.conf.d/50-inception.cnf
+
+[mysqld]
+# Network
+bind-address = 0.0.0.0
+port = 3306
+
+# Paths (debian defaults, but keep explicit)
+datadir = /var/lib/mysql
+socket = /run/mysqld/mysqld.sock
+pid-file = /run/mysqld/mysqld.pid
+
+# Basic sane defaults
+skip-name-resolve
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# Logs (to stderr in containers is OK; MariaDB will log to console anyway)
+log_error = /proc/self/fd/2
+
+# Optional: reduce noise from DNS lookups etc.
+# (skip-name-resolve already helps)

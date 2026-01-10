@@ -1,15 +1,17 @@
 FROM debian:12-slim
 
-RUN apt-get update && apt-get install -y mariadb-server \
-	&& rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends mariadb-server mariadb-client \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN sed -i 's/^bind-address[[:space:]]*=.*/bind-address = 0.0.0.0/' \
-	/etc/mysql/mariadb.conf.d/50-server.cnf
+COPY conf/50-inception.cnf /etc/mysql/mariadb.conf.d/50-inception.cnf
 
 COPY tools/create_db.sh /usr/local/bin/create_db.sh
 RUN chmod +x /usr/local/bin/create_db.sh
 
+RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
+
 EXPOSE 3306
 
 ENTRYPOINT ["/usr/local/bin/create_db.sh"]
-CMD ["mysqld_safe"]
+CMD ["mariadbd", "--user=mysql", "--datadir=/var/lib/mysql"]
