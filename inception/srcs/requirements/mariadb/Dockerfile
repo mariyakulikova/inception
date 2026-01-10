@@ -4,7 +4,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends mariadb-server mariadb-client \
   && rm -rf /var/lib/apt/lists/*
 
-COPY conf/50-inception.cnf /etc/mysql/mariadb.conf.d/50-inception.cnf
+COPY conf/50-inception.cnf /etc/mysql/mariadb.conf.d/99-inception.cnf
 
 COPY tools/create_db.sh /usr/local/bin/create_db.sh
 RUN chmod +x /usr/local/bin/create_db.sh
