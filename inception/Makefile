@@ -15,7 +15,7 @@ SECRETS_SRC = $(HOME)/secrets
 ENV_SRC = $(HOME)/.env
 ENV_DST = srcs/.env
 
-SECRETS_DST = secrets/
+SECRETS_DST = $(PWD)/secrets/
 SECRET_FILES = \
 	db_root_pass.txt \
 	db_user_pass.txt \
