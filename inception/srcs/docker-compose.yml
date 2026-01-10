@@ -1,5 +1,6 @@
 services:
   mariadb:
+    image: mariadb
     build: ./requirements/mariadb
     container_name: mariadb
     env_file:
@@ -14,6 +15,7 @@ services:
       - db_user_pass
 
   wordpress:
+    image: wordpress
     build: ./requirements/wordpress
     container_name: wordpress
     env_file:
@@ -31,6 +33,7 @@ services:
       - db_user_pass
 
   nginx:
+    image: nginx
     build: ./requirements/nginx
     container_name: nginx
     env_file:
