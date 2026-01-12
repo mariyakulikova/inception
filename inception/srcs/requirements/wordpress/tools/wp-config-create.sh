@@ -10,7 +10,7 @@ MARKER="$WEBROOT/.inception_wp_initialized"
 : "${DB_HOST:=mariadb}"
 
 : "${WP_TITLE:=Inception}"
-: "${WP_ADMIN_USER:=admin}"
+: "${WP_ADMIN_USER:=siteowner}"
 : "${WP_ADMIN_EMAIL:=admin@example.com}"
 : "${WP_USER:=user}"
 : "${WP_USER_EMAIL:=user@example.com}"
@@ -56,7 +56,7 @@ WP_ADMIN_PASS="$(read_secret /run/secrets/wp_admin_pass)"
 WP_USER_PASS="$(read_secret /run/secrets/wp_user_pass)"
 
 echo "Waiting for MariaDB..."
-until mysqladmin ping -h"${DB_HOST}" -u"${DB_USER}" -p"${DB_PASS}" --silent; do
+until mysqladmin ping -h"${DB_HOST}" --silent; do
   sleep 1
 done
 echo "MariaDB is up."
