@@ -16,8 +16,7 @@ MARKER="$WEBROOT/.inception_wp_initialized"
 : "${WP_USER_EMAIL:=user@example.com}"
 : "${WP_USER_ROLE:=subscriber}"
 
-DOMAIN_NO_PORT="${DOMAIN_NAME%%:*}"
-WP_URL="https://${DOMAIN_NO_PORT}"
+WP_URL="https://${DOMAIN_NAME}"
 
 read_secret() {
   local path="$1"
